@@ -1,0 +1,397 @@
+# -*- shell-script -*-
+# bash functions.
+#
+
+######################################################################
+# A little help for displaying commands.
+######################################################################
+mmhelp () {
+    echo "Useful commands:"
+    echo "--------------------------------------------------------------"
+    echo "grepc        grep in C/C++ code files in current directory only"
+    echo "grepd        grep in C/C++ code files and subdirs"
+    echo "greph        grep in header files and subdirs"
+    echo "grepjx       grep in java and xml files and subdirs, ignoring tests"
+    echo "grepjxt      grep in all java and xml files and subdirs"
+    echo "grepjs       grep in js/json files and subdirs, IGNORING node_modules"
+    echo "greppy       grep in python files and subdirs EXCLUDING infra"
+    echo "greppyi      grep in python files and subdirs INCLUDING infra"
+    echo "grept        grep in .txt files and files in subdirs"
+
+    echo "ut           Time conversion python script"
+    echo "killport     Kill process controlling port X"
+    echo ""
+    echo "Short aliases and functions:"
+    echo "xd           Function to run xmllint formatter on input"
+    echo "nd           Alias for <node my-decode-program [args]>"
+
+    mmgithelp
+}
+
+
+# Display the path of the filename for a given python module.
+# Do not use the '.py' suffix. For example:
+# % python_mod_path random
+# -> /System/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/random.py
+function py_mod_path()
+{
+    python -c 'import '$1'; print('$1'.__file__.rstrip("c"))';
+}
+
+
+######################################################################
+# path_ functions
+#
+# Need to have these listed early, rather than lower down, so as to 
+# have them available for setting up the personal environment
+######################################################################
+
+######################################################################
+# Purpose:   Remove an element from a path.  Useful for situations
+#            in development where you want to have several playpens
+#            and swap the path around to point to one rather than
+#            the other, and remove PATH entries that were pointing
+#            to the other.
+# Arguments: $1 = Path to remove from
+#            $2 = grep-pattern to use to find entries to remove.
+# Return:    Path with matching elements removed.  Also prunes
+#            adjacent colons.
+######################################################################
+function path_remove ()
+{
+    local pathvar="$1"
+    local toremove="$2"
+    echo "$pathvar" | tr ":" "\n" | grep -v "$toremove" | tr "\n" ":" | sed -e 's/::/:/' -e 's/:$//' 
+}
+
+######################################################################
+# Purpose:   Given a path and an element to add to the path, return
+#            a path-string that includes the element exactly once.
+# Arguments: $1 = Path to insert into.
+#            $2 = Element to ensure exists in the path.
+#            $3 = Position to add at.  One of:
+#                 "front" - Path element is prepended to the result
+#                 "back" - Path element is appended to the result.
+#                 This parameter is optional, and defaults to "back".
+# Return:    Path with element in.  If the element was added, it is
+#            appended at the very end of the original path.  If the
+#            element already existed, it is not moved.
+######################################################################
+function path_add_once ()
+{
+    local pathvar="$1"
+    local toadd="$2"
+    local position="$3"
+    
+    # If the thing to add is empty, then no-op; return the path as passed in.
+    if [ "$toadd" = "" ] ; then
+	echo "$pathvar"
+	return 0;
+    fi
+
+    # If the path-to-which-to-add is entirely blank, just return the thing-to-add
+    if [ "$pathvar" = "" ] ; then 
+	echo "$toadd"
+	return 0;
+    fi
+    
+    pathvar=$(path_remove "$pathvar" "^$toadd$")
+    if [ "$position" = "front" ] ; then
+	echo "$toadd:$pathvar"
+    else
+	echo "$pathvar:$toadd"
+    fi
+    
+    return 0;
+}
+
+######################################################################
+# Set up prompt string and xtitle.
+# Call environment fixing functions to allow them to fixup stuff 
+# as we navigate directories.
+#
+# Sets prompt/xtitle to:
+# HOST:DIR		if not in any work tree
+# HOST:(tree) <subdir>	if in some build tree
+#
+# Uses env:
+# $WORKTOP      The top level CVS source directory.
+# $BUILDTOP     The top level git code directory.
+# $HOSTNAME     The name of the current computer. If not set, determine
+# 
+######################################################################
+prompt()
+{
+    prompt_reset
+    fulldir="$PWD"
+
+    host=$HOSTNAME
+    if [ $host. = . ] 
+      then host=`uname -n`
+    fi
+
+# Check if in a code tree subdirectory.
+    if [ "${fulldir#$BUILDTOP}" != "$fulldir" ] ; then
+	prompt_git
+    else
+	prompt_basic
+    fi
+}
+
+#-----------------------------
+# prompt helper functions
+#-----------------------------
+prompt_reset()
+{
+    tree=
+    toplevel=
+    topdir=
+    project=
+    subdir=
+    toplevel=
+}
+
+# Basic prompt and window titling function
+prompt_basic()
+{
+    reltohome=${PWD#$HOME}
+    if [ ${#reltohome} -lt ${#fulldir} ] ; then 
+        displaycwd='~'$reltohome
+    else 
+        displaycwd=$fulldir
+    fi
+
+    export PS1='${host%%.*}:${displaycwd} % '
+    if [ "$TERM" = "xterm" -o $TERM = "xterm-color" -o $TERM = "xterm-256color" -o $TERM = "vs100" -o $TERM = "rxvt"  -o "$TERM" = "vt100" ] ; then
+        echo -n ]0\; "$USER @ ${host%%.*} : "${displaycwd}"" 
+    fi
+}
+
+# Prompt and window titling function for when we think we're in code directories.
+prompt_git()
+{
+# We should have checked if we're in a code tree subdirectory already
+    displaydir=${fulldir#$BUILDTOP}
+    displaydir=${displaydir#/}
+    export PS1='${host%%.*}:CODE <${displaydir}> % '
+
+    if [ "$TERM" = "xterm" -o $TERM = "xterm-color" -o $TERM = "xterm-256color" -o $TERM = "vs100" -o $TERM = "rxvt"  -o "$TERM" = "vt100" ] ; then
+      echo -n ]0\; "$USER @ ${host%%.*} CODE" \<${displaydir}\>"" 
+    fi
+}
+
+
+######################################################################
+# bash usage explinations/help...
+#
+# To Strip all but the last three directories in the path:
+#    export PS1='${host%%.*}:${cwd#${cwd%/*/*/*/*}/*/} % '
+#
+# ${parameter#word} Strips away 'word' from beginning of 'parameter'.
+# ${parameter%word} Strips away 'word' from end of 'parameter'.
+# 
+# The trick is that a non-match results in leaving the PWD unchanged.
+# Annotation:
+#  ${PWD%/*/*/*/*}
+#  - strip away bottom 4 paths from PWD
+#  - thus: /a/b/c/d/e -> /a
+#          /a/b/c/d ->
+#          /a/b -> /a/b
+# ${PWD#${PWD%/*/*/*/*}/*/}
+# - strip away the resulting top path plus next from PWD
+# - thus: /a/b/c/d/e -> /a/*/ -> c/d/e
+#         /a/b/c/d -> /*/ -> b/c/d
+#         /a/b -> /a/b/*/ -> /a/b
+######################################################################
+
+######################################################################
+# Simple grep functions.
+#
+# "$@" is used to keep command line quoted arguments quoted.
+#
+######################################################################
+
+# grep in all C/C++ code-ish files in the current directory.
+grepc () {
+  find . -maxdepth 1 \( -name '*akefile' -o -name '*.cpp' -o -name '*.h' -o -name '*.c' \) -exec grep -H "$@" {} \;
+}
+
+# grep in all C/C++ code-ish files in current dir and all subdirs.
+grepd () {
+#  find . -maxdepth 4 \( -name '*akefile' -o -name '*.cpp' -o -name '*.h' -o -name '*.c' \) -exec grep -H "$@" {} \;
+  find . \( -name '*akefile' -o -name '*.cpp' -o -name '*.h' -o -name '*.c' \) -exec grep -H "$@" {} \;
+}
+
+# grep in all java and XML files in the current directory and subdirs,
+# excluding "test" and "report" directories
+grepjx () {
+  find . \( -name test -o -name surefire-reports \) -prune -o \( -name '*.java' -o -name '*.xml' \) -exec grep -H "$@" {} \;
+}
+
+# grep in all java and XML files in the current directory and subdirs (including "test" directories).
+grepjxt () {
+  find . \( -name '*.java' -o -name '*.xml' \) -exec grep -H "$@" {} \;
+}
+
+# grep in all javascript files in the current directory and subdirs.
+# Ignores node_modules directories
+# Ignores .build directories
+# Ignores coverage directories
+grepjs () {
+  find . -name 'node_modules' -prune -o -name '.build' -prune -o -name '.nyc_output' -prune -o -name 'coverage' -prune -o \( -name '*.js' -o -name '*.json' \) -exec grep -H "$@" {} \;
+}
+
+
+# grep in all python source files in the current directory and subdirs.
+# Exclude infra directory(s)
+greppy () {
+  find . -name 'infra' -prune -o \( -name '*.py' \) -exec grep -H "$@" {} \;
+
+  # Or, include everything:
+  #find . -name '*.py' -exec grep -H "$@" {} \;
+}
+
+# grep in all code header files in current dir and all subdirs.
+greph () {
+  find . -name '*.h' -exec grep -H "$@" {} \;
+}
+
+# grep in all text-ish files in current dir and all subdirs.
+grept () {
+#  find . -maxdepth 4 \( -name '*akefile' -o -name '*.cpp' -o -name '*.h' -o -name '*.c' \) -exec grep -H "$@" {} \;
+  find . \( -name '*.txt' -o -name '*.TXT' \) -exec grep -H "$@" {} \;
+}
+
+
+######################################################################
+# Simple list files function.
+######################################################################
+
+list_code () {
+  for i in $*
+  do
+    if [ -d $i ] ; then
+      pushd $i > /dev/null
+      echo $i:
+      \ls $LIST_CODE_OPTIONS *.cc *.cpp *.c *.h  [mM]akefile* 2> /dev/null
+      popd > /dev/null
+    fi
+  done
+
+  if [ $# -eq 0 ] ; then
+    \ls $LIST_CODE_OPTIONS *.cc *.cpp *.c *.h [mM]akefile* 2> /dev/null
+  fi
+}
+
+######################################################################
+# Simple navigation helper functions.
+# Requires BUILDTOP or STAGETOP to be set, not both?
+######################################################################
+# cd/pd to the BUILDTOP or STAGETOP directory, depending on which is set
+cds () {
+    dir_for_buildtop $1
+    goto_dir "cd" $dest_dir
+    dest_dir=
+}
+
+pds () {
+    dir_for_buildtop $1
+    goto_dir "pushd" $dest_dir
+    dest_dir=
+}
+
+dir_for_buildtop () {
+    dest_dir=
+    if [ "${BUILDTOP:-.}" != "." ] ; then
+	dest_dir=$BUILDTOP/$1
+    elif [ "${STAGETOP:-.}" != "." ] ; then
+	dest_dir=$STAGETOP/$1
+    fi
+
+    if [ "${dest_dir:-.}" = "." ] ; then
+	echo "Neither BUILDTOP nor STAGETOP are set..."
+	return
+    fi
+}
+
+# cd/pd to the repo directory
+cdr () {
+    dir_for_repo $1
+    goto_dir "cd" $dest_dir
+    dest_dir=
+}
+
+pdr () {
+    dir_for_repo $1
+    goto_dir "pushd" $dest_dir
+    dest_dir=
+}
+
+dir_for_repo () {
+    local default_repo_top=~/repositories
+    dest_dir=
+    if [ "${REPOTOP:-.}" != "." ] ; then
+	dest_dir=$REPOTOP/$1
+    elif [ -d $default_repo_top ] ; then
+	dest_dir=$default_repo_top/$1
+    fi
+
+    if [ "${dest_dir:-.}" = "." ] ; then
+	echo "REPOTOP not set and $default_repo_top doesn't exist..."
+	return
+    fi
+}
+
+# Generic helper to "go to a directory" using cd or pushd.
+# Refactoring Overkill?
+goto_dir() {
+    if [ $1 != "cd" -a $1 != "pushd" ] ; then
+	echo "Usage: goto_dir {cd,pushd} [dest]"
+	echo "Bad nav command passed: [" $1 "]"
+	return
+    fi
+    $1 $2 > /dev/null
+}
+
+######################################################################
+# Kill the process listening on a port
+######################################################################
+killport () {
+    if [ $# -ne 1 ] ; then
+	echo "Usage: killport <port number>"
+	return
+    fi
+    local pid=`lsof -i tcp:"$1" | awk 'NR!=1 {print $2}'`
+    if [ "$pid" = "" ] ; then
+	echo "Nothing listening on port $1"
+	return
+    fi
+
+    echo "Killing PID $pid (Command: `lsof -i tcp:"$1" | awk 'NR!=1 {print $1}'`)"
+    kill -9 $pid
+}
+
+
+######################################################################
+# Show the current fun and interesting environment variables.
+######################################################################
+showenv () {
+    echo "LD_LIBRARY_PATH   = ${LD_LIBRARY_PATH:-(not set)}"
+    echo "MANPATH           = ${MANPATH:-(not set)}"
+    echo "BUILDTOP          = ${BUILDTOP:-(not set)}"
+    echo "REPOTOP           = ${REPOTOP:-(not set)}"
+    echo "DEBUG             = ${DEBUG:-(not set)}"
+    echo "SYMBOLS           = ${SYMBOLS:-(not set)}"
+    echo "TOOLS             = ${TOOLS:-(not set)}"
+}
+
+# Format the arguments with xmllint, with a separator
+# 'd' stands for "decode" like the 'nd' and 'jd' aliases
+xd()
+{
+    while [ $# -ge 1 ] ; do
+	echo "[32;1mInput ---------------------------------------------------------------- Input[0m"
+	echo $1 | xmllint --format -
+	shift
+    done
+}

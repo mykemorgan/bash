@@ -1,0 +1,408 @@
+# -*- shell-script -*-
+# git helper functions.
+#
+
+######################################################################
+# A little help for displaying commands.
+######################################################################
+mmgithelp () {
+    echo "GIT helper commands:"
+    echo "--------------------------------------------------------------"
+    echo "glog         Show short/specific versions of git log"
+    echo "ghstatus     Show (short) status of all Hermes modules repos"
+    echo "ghdiff       Show diff of all Hermes modules repos"
+    echo "ghlog        Show the last N commits on all Hermes modules repos"
+    echo "ghfetch      Fetch from upstream (non-personal) in all Hermes modules repos"
+    echo "ghrebase     Rebase the current branch (if no outstanding changes) in all Hermes repos"
+    echo "gc           Checkout branch - git checkout"
+    echo "gb           Show branches - git branch -vv"
+    echo ""
+    echo "mmcolor      Echo the first arg wrapped in tty color setting escapes."
+    echo "                Echos to terminals only. Use to set ansi colors."
+    echo ""
+    echo "npmi         Keep running 'npm install' until it works"
+}
+
+######################################################################
+# Aliases for git helpers
+######################################################################
+alias gc='git checkout'
+alias gb='git branch -vv'
+
+######################################################################
+# Show my preferred single-line-formatted "git log" output.
+#
+# Yes, I know you can set git defaults to do some of this as well.
+# Such as default formatting. However, not sure how to "undo" the
+# default when I want that.
+#
+# TODO?
+# Hint: "%B" gives the full header, including subject if want "just
+#       the comments" for a commit, without the diff.
+######################################################################
+glog () {
+    local currentteam="--author=myke --author=foo --author=bar"
+    local currentproject="--author=myke --author=foo --author=bar --author=baz"
+    local recent=
+    local users=
+    local otherargs=
+
+    while [ $# -ge 1 ] ; do
+	if [ $1 = "--team" -o $1 = "-t" ] ; then
+	    users=$currentteam
+	elif [ $1 = "--project" -o $1 = "-p" ] ; then
+	    users=$currentproject
+	elif [ $1 = "--me" -o $1 = "-m" ] ; then
+	    users="--author=mimorgan"
+	elif [ $1 = "-nm"  ] ; then
+	    otherargs="$otherargs --no-merges"
+	elif [ $1 = "--recent" -o $1 = "-r" ] ; then
+	    recent="-n 20"
+	elif [ $1 = "-g" ] ; then
+	    echo "I really don't think you meant '-g'. You sure it wasn't '-p' you wanted?"
+	    return
+	elif [ $1 = "--showteam" ] ; then
+	    echo "Current team is    [$currentteam]"
+	    echo "Current project is [$currentproject]"
+	    return
+	elif [ $1 = "--help" -o $1 = "-h" ] ; then
+	    echo "Usage: glog [options]"
+	    echo "   -h, --help    Show this help message"
+	    echo "   -m, --me      Limit logs to only me"
+	    echo "   -nm           Don't show merge commits (sets --no-merges)"
+	    echo "   -r, --recent  Limit logs to last 20 entries"
+	    echo "   -t, --team    Limit logs to current team members"
+	    echo "   -p, --project Limit logs to current project members"
+	    echo "   --showteam    Show who we think current team members are"
+	    echo "   <other>       Passed as-is to git log command line (at the end)"
+	    return
+	else
+	    otherargs="$otherargs $1"
+	fi
+	shift
+    done
+
+# Old. Having both author date and commit date are useful sometimes.
+# Rethink this when using GitHub pull requests?
+#    git log --date=short --pretty=format:"%ad %cd %h %an %s" $users $recent $otherargs
+    git log --date=local --pretty=format:"%cd %h %Cred%an%Creset %s" $users $recent $otherargs
+}
+
+get_all_components() {
+    local components="fooweb barweb otherservice"
+    echo $components
+}
+
+# XXX - I suppose all the below functions should possibly be python?
+######################################################################
+# Show a (short) git status of all component repos as well as a
+# summary of all repos with outstanding changes.
+#
+# Uses REPOTOP or ~/repositories as the repo parent directory
+######################################################################
+ghstatus () {
+    local repodir=~/repositories
+    if [ "${REPOTOP:-.}" != "." ] ; then
+	repodir=$REPOTOP
+    fi
+    if [ ! -d $repodir ] ; then
+	echo "$repodir doesn't look like a directory. Aborting..."
+	return
+    fi
+    pushd $repodir > /dev/null
+
+    local components=`get_all_components`
+    local all_repos=`ls -d $components 2> /dev/null`
+    if [ "${all_repos:-.}" = "." ] ; then
+	echo "Looks like there's no component directories in `pwd`"
+	popd > /dev/null
+	return 1
+    fi
+
+    local numfilechanges=0
+    local numrepochanges=0
+    local changedrepos=""
+    for repo in $all_repos ; do
+	pushd $repo > /dev/null
+	mmcolor "36;1"
+	echo "----------------------------------------------------------------"
+	echo "Repo: $repo"
+	mmcolor "0"
+	git status -sb
+	if [ $? -eq 0 ] ; then
+	    local count=`git status --porcelain | wc -l | awk '{print $1}'`
+	    echo "Found $count changes"
+	    ((numfilechanges+=$count))
+	    if ((count > 0)) ; then
+		((numrepochanges++))
+		changedrepos="$changedrepos $repo"
+	    fi
+	else
+	    mmcolor "31;1"
+	    echo "*** Error getting status of repo: $repo"
+	    mmcolor "0"
+	fi
+	popd > /dev/null
+    done
+
+    echo ""
+    mmcolor "36;1"
+    echo "----------------------------------------------------------------"
+    echo "Summary:"
+    mmcolor "0"
+    echo "$numfilechanges total files changed in the following $numrepochanges repos:"
+    for repo in $changedrepos ; do
+	mmcolor "36"
+	echo "  $repo"
+	mmcolor "0"
+    done
+
+    popd > /dev/null
+}
+
+######################################################################
+# Show a git diff of all component repos.
+#
+# Uses REPOTOP or ~/repositories as the repo parent directory
+######################################################################
+ghdiff () {
+    local repodir=~/repositories
+    if [ "${REPOTOP:-.}" != "." ] ; then
+	repodir=$REPOTOP
+    fi
+    if [ ! -d $repodir ] ; then
+	echo "$repodir doesn't look like a directory. Aborting..."
+	return
+    fi
+    pushd $repodir > /dev/null
+
+    local components=`get_all_components`
+    local all_repos=`ls -d $components 2> /dev/null`
+    if [ "${all_repos:-.}" = "." ] ; then
+	echo "Looks like there's no component directories in `pwd`"
+	popd > /dev/null
+	return 1
+    fi
+
+    local numfilechanges=0
+    local numrepochanges=0
+    local changedrepos=""
+    for repo in $all_repos ; do
+	pushd $repo > /dev/null
+	mmcolor "36;1"
+	echo "------------------------------------------------------------------------"
+	echo -n "Repo: $repo "
+	local count=`git status --porcelain | wc -l | awk '{print $1}'`
+	echo " has $count changes"
+	((numfilechanges+=$count))
+	if ((count > 0)) ; then
+	    ((numrepochanges++))
+	    changedrepos="$changedrepos $repo"
+	    echo ""
+	    mmcolor "0"
+	    git diff
+	    if [ $? -ne 0 ] ; then
+		mmcolor "31;1"
+		echo "*** Error getting diff of repo: $repo"
+		mmcolor "0"
+	    fi
+	fi
+	popd > /dev/null
+    done
+    echo "Summary:"
+    mmcolor "0"
+    echo "$numfilechanges total files changed in the following $numrepochanges repos:"
+    for repo in $changedrepos ; do
+	mmcolor "36"
+	echo "  $repo"
+	mmcolor "0"
+    done
+
+    popd > /dev/null
+}
+
+
+######################################################################
+# Show the last (N) non-merge commits in all component repos.
+# N=2 by default. Pass "-n N" to see more logs.
+#
+# Accepts all 'glog' arguments except "-r", so for example:
+# % ghlog -t -n 3
+# Shows the last 3 commits by a teammate (defined in glog) in the repos.
+#
+# Uses REPOTOP or ~/repositories as the repo parent directory
+######################################################################
+ghlog () {
+    local repodir=~/repositories
+    if [ "${REPOTOP:-.}" != "." ] ; then
+	repodir=$REPOTOP
+    fi
+    if [ ! -d $repodir ] ; then
+	echo "$repodir doesn't look like a directory. Aborting..."
+	return
+    fi
+    pushd $repodir > /dev/null
+    local num_logs=2
+    local glog_args="-nm -n $num_logs $*"
+
+    local components=`get_all_components`
+    local all_repos=`ls -d $components 2> /dev/null`
+    if [ "${all_repos:-.}" = "." ] ; then
+	echo "Looks like there's no component directories in `pwd`"
+	popd > /dev/null
+	return 1
+    fi
+
+    for repo in $all_repos ; do
+	pushd $repo > /dev/null
+	if [ $? -ne 0 ] ; then
+	    continue
+	fi
+	mmcolor "36;1"
+	echo "----------------------------------------------------------------"
+	echo "Repo: $repo"
+	mmcolor "0"
+	glog $glog_args
+	popd > /dev/null
+    done
+
+    popd > /dev/null
+}
+
+
+
+######################################################################
+# Update all the component repos with a 'git fetch'
+#
+# Uses REPOTOP or ~/repositories as the repo parent directory
+######################################################################
+ghfetch () {
+    local repodir=~/repositories
+    if [ "${REPOTOP:-.}" != "." ] ; then
+	repodir=$REPOTOP
+    fi
+    if [ ! -d $repodir ] ; then
+	echo "$repodir doesn't look like a directory. Aborting..."
+	return
+    fi
+    pushd $repodir > /dev/null
+
+    local components=`get_all_components`
+    local all_repos=`ls -d $components 2> /dev/null`
+    if [ "${all_repos:-.}" = "." ] ; then
+	echo "Looks like there's no component directories in `pwd`"
+	popd > /dev/null
+	return 1
+    fi
+
+    for repo in $all_repos ; do
+	pushd $repo > /dev/null
+	if [ $? -ne 0 ] ; then
+	    continue
+	fi
+	mmcolor "36;1"
+	echo "----------------------------------------------------------------"
+	local remote=`git remote -v | grep -v mimorgan|grep fetch|awk '{print $1;}'`
+	if [ "${remote}:-." = "." ] ; then
+	    mmcolor "31;1"
+	    echo -n "No legal-looking remote for repo: $repo!"
+	    mmcolor "0"
+	    continue
+	fi
+	echo -n "Fetching from repo: $repo Remote: "
+	mmcolor "32;1"
+	echo "[$remote]"
+	mmcolor "0"
+	git fetch $remote
+	popd > /dev/null
+    done
+
+    popd > /dev/null
+}
+
+
+######################################################################
+# Rebase in all component repos.
+#
+# Does not do a rebase if there are any outstanding changes as reported
+# by git status.
+#
+# Uses REPOTOP or ~/repositories as the repo parent directory
+######################################################################
+ghrebase () {
+    local repodir=~/repositories
+    if [ "${REPOTOP:-.}" != "." ] ; then
+	repodir=$REPOTOP
+    fi
+    if [ ! -d $repodir ] ; then
+	echo "$repodir doesn't look like a directory. Aborting..."
+	return
+    fi
+    pushd $repodir > /dev/null
+
+    local components=`get_all_components`
+    local all_repos=`ls -d $components 2> /dev/null`
+    if [ "${all_repos:-.}" = "." ] ; then
+	echo "Looks like there's no component directories in `pwd`"
+	popd > /dev/null
+	return 1
+    fi
+
+    for repo in $all_repos ; do
+	pushd $repo > /dev/null
+	if [ $? -ne 0 ] ; then
+	    continue
+	fi
+	echo "----------------------------------------------------------------"
+	local changes=`git status --porcelain|wc -l`
+	if ((changes > 0)) ; then
+	    mmcolor "31;1"
+	    echo "Changes present repo: $repo - NOT REBASING"
+	    mmcolor "0"
+	else
+	    mmcolor "36;1"
+	    echo "Rebasing in repo: $repo"
+	    mmcolor "0"
+	    git rebase
+	fi
+	popd > /dev/null
+    done
+
+    popd > /dev/null
+}
+
+
+######################################################################
+# Echo the first argument to stdout wrapped in ansi color setting
+# terminal escape sequences.
+# Only echos iff stdout is connected to a terminal.
+# Used to output the ansi color-changing codes.
+#
+# XXX Either rename or have this accept arguments like "red", "green"?
+#
+# As usual FD's for [ -t ] are: (0 - stdin) (1 - stdout) (2 - stderr)
+######################################################################
+mmcolor() {
+    if [ -t 1 ] ; then
+	echo -n "[$1m"
+    fi
+}
+
+######################################################################
+# Keep running 'npm install' until it succeeds. (ouch)
+# Should generalize this!
+#
+# XXX Why the heck is this in gitfuncs file?
+######################################################################
+npmi() {
+    local begin=`date`
+    local attempts=1
+    until npm install ; do
+	((attempts++))
+	echo "Trying again. Attempt $attempts ..."
+    done
+
+    echo "Begin time: $begin"
+    echo "End time:   `date`"
+    echo "Attempts:   $attempts"
+}

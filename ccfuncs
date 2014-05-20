@@ -1,0 +1,78 @@
+######################################################################
+#
+# ClearCase helper functions
+#
+######################################################################
+######################################################################
+# A little help for displaying commands.
+######################################################################
+mmcchelp () {
+    echo "Usefull ClearCase commands. Most need to be run on CC machine."
+    echo "--------------------------------------------------------------"
+
+    echo "ccnv             Next version of build. ClearCase style. <<BROKEN>>"
+    echo "ccdiff           Show diff of all the files checked out in this view."
+    echo "ccpullact	   Pull in a list of activities into the current stream"
+    echo ""
+    echo "mmview-attr      Show view attributes of all views"
+    echo ""
+    echo "Aliases:"
+    echo "mr               Run \"mergit -rebase -default -do_not_ask\""
+    echo "md               Run \"mergit -deliver -default\""
+    echo "ct               cleartool alias"
+    echo "lss              List current stream"
+    echo "lsco             List currently checked out"
+    echo "ctdp             Diff previous graphical"
+    echo "ctdps            Diff previous text"
+    echo "clean-private    Clean view-private files, effectively a clean-all"
+
+    echo ""
+}
+
+######################################################################
+# Show attributes for all views
+######################################################################
+mmview-attr () {
+    for view in `cleartool lsview | grep myke | awk '{if ($1 != "*") print $1; else print $2;}'`
+      do 
+      echo -n "$view: "
+      cleartool lsview -long $view | grep attributes
+    done
+    
+}
+
+
+######################################################################
+# Show a diff of all the files checked out in this view.
+######################################################################
+ccdiff () {
+       local i
+       cleartool lsco -avobs -cview -s | while read i; 
+       do 
+	  echo $i 
+	  cleartool diff -pre -ser $i
+	  echo ""
+       done
+}
+
+
+######################################################################
+# Pull in a list of activities into the current stream
+# From: Mike McCcartney
+######################################################################
+ccpullact () {
+       local act
+       for act in $* ; do
+	   echo "Pulling code from activity $act"
+	   cleartool findmerge ${act}@/vobs/project1 -fcsets -c "Pulling in code from activity $act" -merge -gmerge
+       done
+}
+
+
+######################################################################
+# Clean view-private files. Effectively does a clean-all on the stream.
+######################################################################
+clean-private() {
+    cleartool lsp -other -do | xargs rm -f >& /dev/null
+    cleartool lsp -other -do | sort -r | xargs rmdir
+}

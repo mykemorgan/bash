@@ -1,0 +1,155 @@
+# -*- shell-script -*-
+# .bashrc
+
+# Set up the architecture env
+if [ -x $HOME/bin.scripts/mmarch ]; then
+    export ARCH=`$HOME/bin.scripts/mmarch`
+else
+    export ARCH=freebsd_x86
+fi
+
+# Source global definitions
+# XXX insecure? But: you just logged into a compromised system so... ?
+#if [ -f /etc/bashrc ]; then
+#	. /etc/bashrc
+#fi
+
+# Fix hostname to be simple host, not fully qualified
+export HOSTNAME=`echo $HOSTNAME|cut -d. -f1`
+
+
+######################################################################
+# General preferences
+
+umask 002
+ulimit -c 0
+
+
+######################################################################
+# My custom functions and aliases.
+
+export WORKTOP=$HOME/work
+
+export MM_GIT_LOCATION="some_machine_name"
+export MACHINE_NAME=`uname -n`
+
+if [ "$MACHINE_NAME" = "$MM_GIT_LOCATION" ]; then
+    export BUILDTOP="/x/local/myke/code"
+fi
+
+if [ -f ~/bash/functions ]; then
+	.  ~/bash/functions
+fi
+
+if [ -f ~/bash/gitfuncs ]; then
+	.  ~/bash/gitfuncs
+fi
+
+if [ -f ~/bash/aliases ]; then
+	.  ~/bash/aliases
+fi
+
+# My homegrown prompt that does all the nifty stuff.
+# Should have been defined above in 'functions'?
+export PROMPT_COMMAND=prompt
+
+######################################################################
+# Wow: who prints things any more? And from unix? Whee!
+# -G Gaudy / fancy header
+# -2 two column mode
+# -r landscape mode 
+# -R portrait mode
+# -D add the page device definition to postscript
+export GENSCRIPT="-G2r -DDuplex:true"
+
+######################################################################
+# -d no errors for dumb terminal
+# -E quit at EOF
+# -i ignore case in searches like emacs
+# -M verbose prompt
+# -q quiet mode
+# -X no termcap init/deinit (no clear screen)
+export LESS="-d -E -i -M -X"
+
+export EDITOR=emacs
+export PAGER=less
+export VISUAL=$EDITOR
+
+#export CVSROOT="/x/cvs"
+
+export USER_CAPS=`echo $USER | tr '[a-z]' '[A-Z]'`
+
+
+# Debug info mode. Really kills build times:
+#export DEBUG=1              # Build executables with GDB information added
+#export SYMBOLS=1            # Don't strip symbols from built targets.
+#export INFRA_DEBUG
+
+# No Debug info mode:
+unset DEBUG
+unset SYMBOLS
+unset INFRA_DEBUG
+
+
+# Set playground and related env's. 
+
+# gdbserver stuff
+export DEBUG_GDB_PORT=12321
+
+# path_add_once is in functions file
+export LD_LIBRARY_PATH=$(path_add_once "$LD_LIBRARY_PATH" /x/contrib/lib)
+
+# Force 'ls' to sort like I'm used to: caps first, then lower case. 
+# (ie "ACEbd" and not "AbCdE"). This can be backward in non-POSIX 
+# locales.
+# This can break applications that use LC.
+# - Broke XML parsing using XMLSerializer...
+# - Broke shipserv, broke mpcheckoutserv/VO serialization
+# - So off it got turned... (2006)
+#export LC_ALL=C
+
+
+######################################################################
+# Convenient paths.
+
+export PATH=$(path_add_once "$PATH" /bin)
+export PATH=$(path_add_once "$PATH" /usr/bin)
+export PATH=$(path_add_once "$PATH" /sbin)
+export PATH=$(path_add_once "$PATH" /usr/sbin)
+export PATH=$(path_add_once "$PATH" /usr/local/bin "front")
+
+export PATH=$(path_add_once "$PATH" $HOME/bin.$ARCH)
+export PATH=$(path_add_once "$PATH" $HOME/bin.scripts)
+export PATH=$(path_add_once "$PATH" /usr/X11R6/bin)
+
+# Git stuff
+#export PATH=$(path_add_once "$PATH" /path_to_git)
+#export GITHOME=/x/local/myke/githome
+
+# Quite possibly the best way to set timezone is:
+export TZ="America/Los_Angeles"
+#export TZ=$(date +%Z)
+
+
+# Only show messages in interactive shells so scripts can work
+# without a bunch of junk in the output.
+# SCP also seems to now bomb if there is any output in .bashrc
+if [ "${PS1:-.}" != "." ] ; then 
+   if [ "${BUILDTOP:-.}" != "." ] ; then
+      echo "BUILDTOP set to: $BUILDTOP".
+   else
+      echo "BUILDTOP not set."
+   fi
+   if [ "${STAGETOP:-.}" != "." ] ; then
+      echo "STAGETOP set to $STAGETOP"
+   fi
+fi
+
+#echo "Environment not quite fully setup yet..."
+
+# NVM setup
+# https://github.com/creationix/nvm/blob/master/README.markdown
+# To manually upgrade NVM:
+# cd "$NVM_DIR" && git pull origin master && git checkout `git describe --abbrev=0 --tags`
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh" # This loads nvm

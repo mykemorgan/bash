@@ -1,0 +1,35 @@
+# -*- shell-script -*-
+# bash aliases
+#
+
+alias pd=pushd
+alias rmsq='rm -f *~ .*~'
+
+alias ls='ls -F'
+alias ll='ls -l'
+alias la='ls -a'
+alias ltr='ls -ltr'
+alias lld='ls -ld'
+alias lsc='list_code $*'
+alias lscl='LIST_CODE_OPTIONS=-l list_code $*'
+alias dump='od -a -txC'
+alias h='history|tail -30'
+alias mroe='more'
+alias tf='tail -f'
+alias type='type -path -all'
+alias rehash='hash -r'
+alias df='df -h'
+alias du='du -h'
+
+alias dirs='dirs -v'
+
+# Don't forward XWindows on laptop unless I say so explicitly
+#alias ssh='ssh -X'
+
+alias a2l='addr2line -C -f -e '
+
+# de-mangle library archives...
+alias nm='nm -C'
+
+# Alias for my base64-decode/formatter function (probably need to update)
+alias nd='node ~/Documents/code/javascript/examples/decode $*'

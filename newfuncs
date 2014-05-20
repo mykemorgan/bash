@@ -1,0 +1,8 @@
+# -*- shell-script -*-
+# New bash functions.
+#
+
+function some_function () 
+{
+    echo "some_function called and does nothing!"
+}
