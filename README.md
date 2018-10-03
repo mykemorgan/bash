@@ -1,15 +1,15 @@
 bash
 ====
 
-##Bash scripts and functions.
+## Bash scripts and functions.
 
 To use simply:
 - Create this repo in your home directory.
 - Link bash/dot-bashrc to ~/.bashrc
 
-###Sample Shell Commands
+### Sample Shell Commands
 
-####Raw code commands
+#### Raw code commands
 | Command | Description | 
 |:------- | :---------- |
 | **grepc** | grep in code files, current dir only |
@@ -20,7 +20,7 @@ To use simply:
 | **greppy** | grep in python files and subdirs EXCLUDING infra |
 | **greppyi** | grep in python files and subdirs INCLUDING infra |
 
-####GIT helper commands
+#### GIT helper commands
 | Command | Description | 
 |:------- | :---------- |
 | **glog** | Show short, custom, one-line versions of git log |
@@ -32,7 +32,7 @@ To use simply:
 | **gc** | Checkout branch - git checkout |
 | **gb** | Show branches - git branch -vv |
 
-####Random helper commands
+#### Random helper commands
 | Command | Description | 
 |:------- | :---------- |
 | **ut** | Time conversion script |
