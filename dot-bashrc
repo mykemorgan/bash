@@ -28,15 +28,21 @@ ulimit -c 0
 ######################################################################
 # My custom functions and aliases.
 
-export WORKTOP=$HOME/work
+# Not sure what this was ever for?
+# export WORKTOP=$HOME/work
 
 export MM_GIT_LOCATION="some_machine_name"
 export MACHINE_NAME=`uname -n`
 
-if [ "$MACHINE_NAME" = "$MM_GIT_LOCATION" ]; then
-    export BUILDTOP="/x/local/myke/code"
+######################################################################
+# Drop things into localstuff if you don't want it in public github.
+# This file should be in .gitignore, so be careful.
+######################################################################
+if [ -f ~/bash/localstuff ]; then
+	.  ~/bash/localstuff
 fi
 
+# Other stuff
 if [ -f ~/bash/functions ]; then
 	.  ~/bash/functions
 fi
