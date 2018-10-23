@@ -17,7 +17,6 @@ fi
 # Fix hostname to be simple host, not fully qualified
 export HOSTNAME=`echo $HOSTNAME|cut -d. -f1`
 
-
 ######################################################################
 # General preferences
 
@@ -33,6 +32,8 @@ ulimit -c 0
 
 export MM_GIT_LOCATION="some_machine_name"
 export MACHINE_NAME=`uname -n`
+# don't load up a saved desktop when commiting things
+export GIT_EDITOR='emacs --no-desktop'
 
 ######################################################################
 # Drop things into localstuff if you don't want it in public github.
