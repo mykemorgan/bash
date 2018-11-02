@@ -11,6 +11,7 @@ mmhelp () {
     echo "grepc        grep in C/C++ code files in current directory only"
     echo "grepd        grep in C/C++ code files and subdirs"
     echo "greph        grep in header files and subdirs"
+    echo "grephtml     grep in all html files and subdirs"
     echo "grepjx       grep in java and xml files and subdirs, ignoring tests"
     echo "grepjxt      grep in all java and xml files and subdirs"
     echo "grepjs       grep in js/json files and subdirs, IGNORING node_modules"
@@ -151,6 +152,7 @@ prompt_reset()
     toplevel=
 }
 
+
 # Basic prompt and window titling function
 prompt_basic()
 {
@@ -161,7 +163,9 @@ prompt_basic()
         displaycwd=$fulldir
     fi
 
-    export PS1='${host%%.*}:${displaycwd} % '
+    # Two different styles for coloring, with or without raw characters.
+#    export PS1='\[\033[33m\]${host%%.*}\[\033[0m\]:\[\033[36m\]${displaycwd}\[\033[0m\] % '
+    export PS1='[33m${host%%.*}[0m:[36m${displaycwd}[0m % '
     if [ "$TERM" = "xterm" -o $TERM = "xterm-color" -o $TERM = "xterm-256color" -o $TERM = "vs100" -o $TERM = "rxvt"  -o "$TERM" = "vt100" ] ; then
         echo -n ]0\; "$USER @ ${host%%.*} : "${displaycwd}"" 
     fi
@@ -173,7 +177,7 @@ prompt_git()
 # We should have checked if we're in a code tree subdirectory already
     displaydir=${fulldir#$BUILDTOP}
     displaydir=${displaydir#/}
-    export PS1='${host%%.*}:CODE <${displaydir}> % '
+    export PS1='\[\033[33m\]${host%%.*}\[\033[0m\]:CODE <\[\033[33m\]${displaydir}\[\033[0m\]> % '
 
     if [ "$TERM" = "xterm" -o $TERM = "xterm-color" -o $TERM = "xterm-256color" -o $TERM = "vs100" -o $TERM = "rxvt"  -o "$TERM" = "vt100" ] ; then
       echo -n ]0\; "$USER @ ${host%%.*} CODE" \<${displaydir}\>"" 
@@ -239,6 +243,11 @@ grepjxt () {
 # Ignores coverage directories
 grepjs () {
   find . -name 'node_modules' -prune -o -name '.build' -prune -o -name '.nyc_output' -prune -o -name 'coverage' -prune -o \( -name '*.js' -o -name '*.json' \) -exec grep -H "$@" {} \;
+}
+
+# grep in all html files in current dir and all subdirs.
+grephtml () {
+  find . -name '*.html' -exec grep -H "$@" {} \;
 }
 
 

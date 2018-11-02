@@ -43,6 +43,14 @@ if [ -f ~/bash/localstuff ]; then
 	.  ~/bash/localstuff
 fi
 
+# enable color support of ls
+if [ -x /usr/bin/dircolors ]; then
+  test -r ~/bash/dircolors && eval "$(dircolors -b ~/bash/dircolors)" || eval "$(dircolors -b)"
+
+  # Elsewhere do:
+  #alias ls='ls --color=auto'
+fi
+
 # Other stuff
 if [ -f ~/bash/functions ]; then
 	.  ~/bash/functions
@@ -79,7 +87,8 @@ export GENSCRIPT="-G2r -DDuplex:true"
 export LESS="-d -E -i -M -X"
 
 export EDITOR=emacs
-export PAGER=less
+export PAGER='less -R'
+export GIT_PAGER='less -R'
 export VISUAL=$EDITOR
 
 #export CVSROOT="/x/cvs"
@@ -90,13 +99,10 @@ export USER_CAPS=`echo $USER | tr '[a-z]' '[A-Z]'`
 # Debug info mode. Really kills build times:
 #export DEBUG=1              # Build executables with GDB information added
 #export SYMBOLS=1            # Don't strip symbols from built targets.
-#export INFRA_DEBUG
 
 # No Debug info mode:
 unset DEBUG
 unset SYMBOLS
-unset INFRA_DEBUG
-
 
 # Set playground and related env's. 
 

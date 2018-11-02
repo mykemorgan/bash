@@ -5,9 +5,9 @@
 alias pd=pushd
 alias rmsq='rm -f *~ .*~'
 
-alias ls='ls -F'
+alias ls='ls -F --color=auto'
 alias ll='ls -l'
-alias la='ls -a'
+alias la='ls -A'
 alias ltr='ls -ltr'
 alias lld='ls -ld'
 alias lsc='list_code $*'
@@ -23,13 +23,16 @@ alias du='du -h'
 
 alias dirs='dirs -v'
 
-# Don't forward XWindows on laptop unless I say so explicitly
+# Color stuff
+alias dir='dir --color=auto'
+alias grep='grep --color=auto'
+alias fgrep='fgrep --color=auto'
+alias egrep='egrep --color=auto'
+
+# Don't forward XWindows unless I say so explicitly
 #alias ssh='ssh -X'
 
 alias a2l='addr2line -C -f -e '
 
 # de-mangle library archives...
 alias nm='nm -C'
-
-# Alias for my base64-decode/formatter function (probably need to update)
-alias nd='node ~/Documents/code/javascript/examples/decode $*'
