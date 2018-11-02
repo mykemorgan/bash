@@ -5,7 +5,16 @@
 alias pd=pushd
 alias rmsq='rm -f *~ .*~'
 
-alias ls='ls -F --color=auto'
+# Mac's (FreeBSD?) don't have --color nor use dircolors so just don't
+# 'ls -G' on Mac gives colorized output, but need to customize it:
+# see 'man ls', LSCOLORS section. For now just set dir's to cyan.
+if [ "${ARCH:-.}" = "Darwin_x86" ] ; then
+    alias ls='ls -F -G'
+    export LSCOLORS=gx
+else
+    alias ls='ls -F --color=auto'
+fi
+
 alias ll='ls -l'
 alias la='ls -A'
 alias ltr='ls -ltr'
