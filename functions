@@ -163,9 +163,9 @@ prompt_basic()
         displaycwd=$fulldir
     fi
 
-    # Two different styles for coloring, with or without raw characters.
-#    export PS1='\[\033[33m\]${host%%.*}\[\033[0m\]:\[\033[36m\]${displaycwd}\[\033[0m\] % '
-    export PS1='[33m${host%%.*}[0m:[36m${displaycwd}[0m % '
+    # This is the current best way to color style without messing up the terminal with
+    # raw escape characters.
+    export PS1='\[\033[33m\]${host%%.*}\[\033[0m\]:\[\033[36m\]${displaycwd}\[\033[0m\] % '
     if [ "$TERM" = "xterm" -o $TERM = "xterm-color" -o $TERM = "xterm-256color" -o $TERM = "vs100" -o $TERM = "rxvt"  -o "$TERM" = "vt100" ] ; then
         echo -n ]0\; "$USER @ ${host%%.*} : "${displaycwd}"" 
     fi
