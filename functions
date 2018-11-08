@@ -217,13 +217,13 @@ prompt_git()
 
 # grep in all C/C++ code-ish files in the current directory.
 grepc () {
-  find . -maxdepth 1 \( -name '*akefile' -o -name '*.cpp' -o -name '*.h' -o -name '*.c' \) -exec grep -H "$@" {} \;
+  find . -maxdepth 1 \( -name '*akefile' -o -name '*.cpp' -o -name '*.cc' -o -name '*.h' -o -name '*.c' \) -exec grep -H "$@" {} \;
 }
 
 # grep in all C/C++ code-ish files in current dir and all subdirs.
 grepd () {
 #  find . -maxdepth 4 \( -name '*akefile' -o -name '*.cpp' -o -name '*.h' -o -name '*.c' \) -exec grep -H "$@" {} \;
-  find . \( -name '*akefile' -o -name '*.cpp' -o -name '*.h' -o -name '*.c' \) -exec grep -H "$@" {} \;
+  find . \( -name '*akefile' -o -name '*.cpp' -o -name '*.cc' -o -name '*.h' -o -name '*.c' \) -exec grep -H "$@" {} \;
 }
 
 # grep in all java and XML files in the current directory and subdirs,
@@ -267,7 +267,6 @@ greph () {
 
 # grep in all text-ish files in current dir and all subdirs.
 grept () {
-#  find . -maxdepth 4 \( -name '*akefile' -o -name '*.cpp' -o -name '*.h' -o -name '*.c' \) -exec grep -H "$@" {} \;
   find . \( -name '*.txt' -o -name '*.TXT' \) -exec grep -H "$@" {} \;
 }
 
@@ -282,13 +281,13 @@ list_code () {
     if [ -d $i ] ; then
       pushd $i > /dev/null
       echo $i:
-      \ls $LIST_CODE_OPTIONS *.cc *.cpp *.c *.h  [mM]akefile* 2> /dev/null
+      \ls $LIST_CODE_OPTIONS *.cc *.cpp *.c *.h BUILD [mM]akefile* 2> /dev/null
       popd > /dev/null
     fi
   done
 
   if [ $# -eq 0 ] ; then
-    \ls $LIST_CODE_OPTIONS *.cc *.cpp *.c *.h [mM]akefile* 2> /dev/null
+    \ls $LIST_CODE_OPTIONS *.cc *.cpp *.c *.h BUILD [mM]akefile* 2> /dev/null
   fi
 }
 
