@@ -131,9 +131,13 @@ prompt()
       then host=`uname -n`
     fi
 
-# Check if in a code tree subdirectory.
+    # Check if in a code tree subdirectory.
+    # Parameterize the label so it can be associated with BUILDTOP
+    # and we can have multiple of them.
     if [ "${fulldir#$BUILDTOP}" != "$fulldir" ] ; then
-	prompt_git
+	prompt_repo $BUILDTOP $BUILDPROMPT
+    elif [ "${fulldir#$REPOTOP}" != "$fulldir" ] ; then
+	prompt_repo $REPOTOP $REPOPROMPT
     else
 	prompt_basic
     fi
@@ -172,15 +176,19 @@ prompt_basic()
 }
 
 # Prompt and window titling function for when we think we're in code directories.
-prompt_git()
+# $1 - the base directory to strip out of the path in the prompt
+# $2 - the prompt to use for the base directory of the repo
+prompt_repo()
 {
+    basedir=$1
+    label=$2
 # We should have checked if we're in a code tree subdirectory already
-    displaydir=${fulldir#$BUILDTOP}
+    displaydir=${fulldir#$basedir}
     displaydir=${displaydir#/}
-    export PS1='\[\033[33m\]${host%%.*}\[\033[0m\]:CODE <\[\033[33m\]${displaydir}\[\033[0m\]> % '
+    export PS1='\[\033[33m\]${host%%.*}\[\033[0m\]:$label <\[\033[33m\]${displaydir}\[\033[0m\]> % '
 
     if [ "$TERM" = "xterm" -o $TERM = "xterm-color" -o $TERM = "xterm-256color" -o $TERM = "vs100" -o $TERM = "rxvt"  -o "$TERM" = "vt100" ] ; then
-      echo -n ]0\; "$USER @ ${host%%.*} CODE" \<${displaydir}\>"" 
+      echo -n ]0\; "$USER @ ${host%%.*} $label" \<${displaydir}\>"" 
     fi
 }
 
@@ -387,7 +395,9 @@ showenv () {
     echo "LD_LIBRARY_PATH   = ${LD_LIBRARY_PATH:-(not set)}"
     echo "MANPATH           = ${MANPATH:-(not set)}"
     echo "BUILDTOP          = ${BUILDTOP:-(not set)}"
+    echo "BUILDPROMPT       = ${BUILDPROMPT:-(not set)}"
     echo "REPOTOP           = ${REPOTOP:-(not set)}"
+    echo "REPOPROMPT        = ${REPOPROMPT:-(not set)}"
     echo "DEBUG             = ${DEBUG:-(not set)}"
     echo "SYMBOLS           = ${SYMBOLS:-(not set)}"
     echo "TOOLS             = ${TOOLS:-(not set)}"
