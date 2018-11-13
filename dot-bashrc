@@ -35,14 +35,6 @@ export MACHINE_NAME=`uname -n`
 # don't load up a saved desktop when commiting things
 export GIT_EDITOR='emacs --no-desktop'
 
-######################################################################
-# Drop things into localstuff if you don't want it in public github.
-# This file should be in .gitignore, so be careful.
-######################################################################
-if [ -f ~/bash/localstuff ]; then
-	.  ~/bash/localstuff
-fi
-
 # enable color support of ls
 if [ -x /usr/bin/dircolors ]; then
   test -r ~/bash/dircolors && eval "$(dircolors -b ~/bash/dircolors)" || eval "$(dircolors -b)"
@@ -62,6 +54,14 @@ fi
 
 if [ -f ~/bash/aliases ]; then
 	.  ~/bash/aliases
+fi
+
+######################################################################
+# Drop things into localstuff if you don't want it in public github.
+# This file should be in .gitignore, so be careful.
+######################################################################
+if [ -f ~/bash/localstuff ]; then
+	.  ~/bash/localstuff
 fi
 
 # My homegrown prompt that does all the nifty stuff.
