@@ -32,8 +32,8 @@ ulimit -c 0
 
 export MM_GIT_LOCATION="some_machine_name"
 export MACHINE_NAME=`uname -n`
-# don't load up a saved desktop when commiting things
-export GIT_EDITOR='emacs --no-desktop'
+# don't load up a saved desktop, and stay in window with git
+export GIT_EDITOR='emacs --no-desktop -nw'
 
 # enable color support of ls
 if [ -x /usr/bin/dircolors ]; then
@@ -86,7 +86,8 @@ export GENSCRIPT="-G2r -DDuplex:true"
 # -X no termcap init/deinit (no clear screen)
 export LESS="-d -E -i -M -X"
 
-export EDITOR=emacs
+# When launched by tools, stay in whatever window you're in and no desktop
+export EDITOR='emacs --no-desktop -nw'
 export PAGER='less -R'
 export GIT_PAGER='less -R'
 export VISUAL=$EDITOR
