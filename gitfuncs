@@ -41,8 +41,9 @@ alias gb='git branch -vv'
 #       the comments" for a commit, without the diff.
 ######################################################################
 glog () {
-    local currentteam="--author=myke --author=foo --author=bar"
-    local currentproject="--author=myke --author=foo --author=bar --author=baz"
+    local myid="mykemorgan"
+    local currentteam="--author=$myid --author=foo --author=bar"
+    local currentproject="--author=$myid --author=foo --author=bar --author=baz"
     local recent=
     local users=
     local otherargs=
@@ -53,7 +54,7 @@ glog () {
 	elif [ $1 = "--project" -o $1 = "-p" ] ; then
 	    users=$currentproject
 	elif [ $1 = "--me" -o $1 = "-m" ] ; then
-	    users="--author=mimorgan"
+	    users="--author=$myid"
 	elif [ $1 = "-nm"  ] ; then
 	    otherargs="$otherargs --no-merges"
 	elif [ $1 = "--recent" -o $1 = "-r" ] ; then
@@ -302,7 +303,7 @@ ghfetch () {
 	fi
 	mmcolor "36;1"
 	echo "----------------------------------------------------------------"
-	local remote=`git remote -v | grep -v mimorgan|grep fetch|awk '{print $1;}'`
+	local remote=`git remote -v | grep -v $myid | grep fetch | awk '{print $1;}'`
 	if [ "${remote}:-." = "." ] ; then
 	    mmcolor "31;1"
 	    echo -n "No legal-looking remote for repo: $repo!"
