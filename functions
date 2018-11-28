@@ -200,7 +200,15 @@ prompt_repo()
     export PS1="\[\033[33m\]${host%%.*}\[\033[0m\]:$label <\[\033[33m\]${displaydir}\[\033[0m\]> % "
 
     if [ "$TERM" = "xterm" -o $TERM = "xterm-color" -o $TERM = "xterm-256color" -o $TERM = "vs100" -o $TERM = "rxvt"  -o "$TERM" = "vt100" ] ; then
-      echo -n ]0\; "$USER @ ${host%%.*} $label" \<${displaydir}\>"" 
+      # Jump through some sed and shell string hoops:
+      # 1) can't get the backslashes without putting the regex in a variable (?)
+      #    Variable can be single or double quoted but note differences.
+      # 2) sed doesn't have "non greedy" regex.
+      #    So can't search .*? between \[\] anything but "]" like: [^]]
+#      regex="s/\\\\\\[[^]]*\\\\\\]//g"
+      regex='s/\\\[[^]]*\\\]//g'
+      cleanlabel=`echo $label | sed -e $regex`
+      echo -n ]0\; "$USER @ ${host%%.*} $cleanlabel" \<${displaydir}\>"" 
     fi
 }
 
