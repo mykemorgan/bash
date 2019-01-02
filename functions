@@ -23,7 +23,7 @@ mmhelp () {
     echo "killport     Kill process controlling port X"
     echo ""
     echo "Short aliases and functions:"
-    echo "xd           Function to run xmllint formatter on input"
+    echo "xd           Function to run xmllint formatter on input files"
     echo "nd           Alias for <node my-decode-program [args]>"
 
     mmgithelp
@@ -180,10 +180,16 @@ prompt_basic()
     fi
 
     # This is the current best way to color style without messing up the terminal with
-    # raw escape characters.
-    export PS1="\[\033[33m\]${host%%.*}\[\033[0m\]:\[\033[33m\]${displaycwd}\[\033[0m\] % "
+    # raw escape characters directly added in emacs.
+    # Note here we have to use the enclosing \[\033 ... \] escape sequence for color.
+    # Since (I assume) this script doesn't use echo directly to print the prompt,
+    # whatever does print the prompt doesn't know what "\e" means...
+    # Also, can have a single \[ \] around the whole thing. Either of below work.
+#    export PS1="\[\033[33m\]${host%%.*}\[\033[0m\]:\[\033[33m\]${displaycwd}\[\033[0m\] % "
+    export PS1="\[\033[33m${host%%.*}\033[0m:\033[33m${displaycwd}\033[0m\] % "
     if [ "$TERM" = "xterm" -o $TERM = "xterm-color" -o $TERM = "xterm-256color" -o $TERM = "vs100" -o $TERM = "rxvt"  -o "$TERM" = "vt100" ] ; then
-        echo -n ]0\; "$USER @ ${host%%.*} : "${displaycwd}"" 
+        # Here we use "\e]0;" "...other stuff..." "\a" construct to set title bar of window
+        echo -ne "\e]0;" "$USER @ ${host%%.*} : "${displaycwd}"" "\a"
     fi
 }
 
@@ -197,7 +203,7 @@ prompt_repo()
 # We should have checked if we're in a code tree subdirectory already
     displaydir=${fulldir#$basedir}
     displaydir=${displaydir#/}
-    export PS1="\[\033[33m\]${host%%.*}\[\033[0m\]:$label <\[\033[33m\]${displaydir}\[\033[0m\]> % "
+    export PS1="\[\033[33m${host%%.*}\[\033[0m:$label <\[\033[33m${displaydir}\[\033[0m\]> % "
 
     if [ "$TERM" = "xterm" -o $TERM = "xterm-color" -o $TERM = "xterm-256color" -o $TERM = "vs100" -o $TERM = "rxvt"  -o "$TERM" = "vt100" ] ; then
       # Jump through some sed and shell string hoops:
@@ -208,7 +214,7 @@ prompt_repo()
 #      regex="s/\\\\\\[[^]]*\\\\\\]//g"
       regex='s/\\\[[^]]*\\\]//g'
       cleanlabel=`echo $label | sed -e $regex`
-      echo -n ]0\; "$USER @ ${host%%.*} $cleanlabel" \<${displaydir}\>"" 
+      echo -ne "\e]0;" "$USER @ ${host%%.*} $cleanlabel" \<${displaydir}\>"" "\a"
     fi
 }
 
@@ -429,8 +435,9 @@ showenv () {
 xd()
 {
     while [ $# -ge 1 ] ; do
-	echo "[32;1mInput ---------------------------------------------------------------- Input[0m"
-	echo $1 | xmllint --format -
-	shift
+      # Note the use of "echo -e" to enable the escape sequences like \E or \033 for colors
+      echo -e "\e[32;1mInput ---------------------------------------------------------------- Input\e[0m"
+      xmllint --format $1
+      shift
     done
 }
