@@ -134,18 +134,24 @@ prompt()
       then host=`uname -n`
     fi
 
+    # See if we have set up special paths for special prompts
+    if [ "${PATHPROMPTS:-.}" = "." ] ; then
+	prompt_basic
+	return
+    fi
+
     # Loop through the PATHPROMPT array, looking for a directory
     local i=0
     local found=""
     while [ ${PATHPROMPTS[i]} != null -a ${PATHPROMPTS[((i+1))]} != null ] ; do
-      local TOP=${PATHPROMPTS[$i]}
-      local PROMPT=${PATHPROMPTS[$((i+1))]}
-      if [ "${fulldir#$TOP}" != "$fulldir" ] ; then
-        prompt_repo $TOP $PROMPT
-        found="$PROMPT"
-        break
-      fi
-      ((i+=2))
+	local TOP=${PATHPROMPTS[$i]}
+	local PROMPT=${PATHPROMPTS[$((i+1))]}
+	if [ "${fulldir#$TOP}" != "$fulldir" ] ; then
+	    prompt_repo $TOP $PROMPT
+	    found="$PROMPT"
+	    break
+	fi
+	((i+=2))
     done
 
     if [ "${found:-.}" = "." ] ; then
@@ -183,13 +189,14 @@ prompt_basic()
     # raw escape characters directly added in emacs.
     # Note here we have to use the enclosing \[\033 ... \] escape sequence for color.
     # Since (I assume) this script doesn't use echo directly to print the prompt,
-    # whatever does print the prompt doesn't know what "\e" means...
-    # Also, can have a single \[ \] around the whole thing. Either of below work.
-#    export PS1="\[\033[33m\]${host%%.*}\[\033[0m\]:\[\033[33m\]${displaycwd}\[\033[0m\] % "
-    export PS1="\[\033[33m${host%%.*}\033[0m:\033[33m${displaycwd}\033[0m\] % "
+    # whatever does print the prompt doesn't know what "\e" means.
+    # Plus iOS bash doesn't like \e shortcut for \033 either.
+    # Remember to close the \[ \] around each color spec. Not doing this messes up some
+    # terminal things like "where the line begin is" when hitting Ctrl-a for example.
+    export PS1="\[\033[33m\]${host%%.*}\[\033[0m\]:\[\033[33m\]${displaycwd}\[\033[0m\] % "
     if [ "$TERM" = "xterm" -o $TERM = "xterm-color" -o $TERM = "xterm-256color" -o $TERM = "vs100" -o $TERM = "rxvt"  -o "$TERM" = "vt100" ] ; then
-        # Here we use "\e]0;" "...other stuff..." "\a" construct to set title bar of window
-        echo -ne "\e]0;" "$USER @ ${host%%.*} : "${displaycwd}"" "\a"
+        # Here we use "\033]0;" "...text..." "\a" to set title bar of window.
+        echo -ne "\033]0;" "$USER @ ${host%%.*} : "${displaycwd}"\a"
     fi
 }
 
@@ -203,7 +210,7 @@ prompt_repo()
 # We should have checked if we're in a code tree subdirectory already
     displaydir=${fulldir#$basedir}
     displaydir=${displaydir#/}
-    export PS1="\[\033[33m${host%%.*}\[\033[0m:$label <\[\033[33m${displaydir}\[\033[0m\]> % "
+    export PS1="\[\033[33m\]${host%%.*}\[\033[0m\]:$label <\[\033[33m\]${displaydir}\[\033[0m\]> % "
 
     if [ "$TERM" = "xterm" -o $TERM = "xterm-color" -o $TERM = "xterm-256color" -o $TERM = "vs100" -o $TERM = "rxvt"  -o "$TERM" = "vt100" ] ; then
       # Jump through some sed and shell string hoops:
@@ -214,7 +221,7 @@ prompt_repo()
 #      regex="s/\\\\\\[[^]]*\\\\\\]//g"
       regex='s/\\\[[^]]*\\\]//g'
       cleanlabel=`echo $label | sed -e $regex`
-      echo -ne "\e]0;" "$USER @ ${host%%.*} $cleanlabel" \<${displaydir}\>"" "\a"
+      echo -ne "\033]0;" "$USER @ ${host%%.*} $cleanlabel" \<${displaydir}\>"\a"
     fi
 }
 

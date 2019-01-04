@@ -63,6 +63,10 @@ fi
 if [ -f ~/bash/localstuff ]; then
 	.  ~/bash/localstuff
 fi
+# See if we have set up special paths for special prompts
+if [ "${PATHPROMPTS:-.}" = "." ] ; then
+    echo "PATHPROMPTS not set."
+fi
 
 # My homegrown prompt that does all the nifty stuff.
 # Should have been defined above in 'functions'?
