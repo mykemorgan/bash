@@ -10,6 +10,7 @@ mmhelp () {
     echo "--------------------------------------------------------------"
     echo "grepc        grep in C/C++ code files in current directory only"
     echo "grepd        grep in C/C++ code files and subdirs"
+    echo "grepg        grep in Go code files and subdirs"
     echo "greph        grep in header files and subdirs"
     echo "grephtml     grep in all html files and subdirs"
     echo "grepjx       grep in java and xml files and subdirs, ignoring tests"
@@ -265,6 +266,11 @@ grepc () {
 grepd () {
 #  find . -maxdepth 4 \( -name '*akefile' -o -name '*.cpp' -o -name '*.h' -o -name '*.c' \) -exec grep -H "$@" {} \;
   find . \( -name '*akefile' -o -name '*.cpp' -o -name '*.cc' -o -name '*.h' -o -name '*.c' \) -exec grep -H "$@" {} \;
+}
+
+# grep in all Go files in current dir and all subdirs.
+grepg () {
+  find . \( -name '*akefile' -o -name '*.go' -o -name 'BUILD' \) -exec grep --color=auto -H "$@" {} \;
 }
 
 # grep in all java and XML files in the current directory and subdirs,
