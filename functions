@@ -8,6 +8,7 @@
 mmhelp () {
     echo "Useful commands:"
     echo "--------------------------------------------------------------"
+    echo "genv         grep for a string in all the environment variables"
     echo "grepc        grep in C/C++ code files in current directory only"
     echo "grepd        grep in C/C++ code files and subdirs"
     echo "grepg        grep in Go code files and subdirs"
@@ -257,15 +258,20 @@ prompt_repo()
 #
 ######################################################################
 
+# Grep in all environment variables
+genv() {
+  env | grep "$@"
+}
+
 # grep in all C/C++ code-ish files in the current directory.
 grepc () {
-  find . -maxdepth 1 \( -name '*akefile' -o -name '*.cpp' -o -name '*.cc' -o -name '*.h' -o -name '*.c' \) -exec grep -H "$@" {} \;
+  find . -maxdepth 1 \( -name '*akefile' -o -name '*.cpp' -o -name '*.cc' -o -name '*.h' -o -name '*.c' \) -exec grep -H "$@" --color=auto {} \;
 }
 
 # grep in all C/C++ code-ish files in current dir and all subdirs.
 grepd () {
 #  find . -maxdepth 4 \( -name '*akefile' -o -name '*.cpp' -o -name '*.h' -o -name '*.c' \) -exec grep -H "$@" {} \;
-  find . \( -name '*akefile' -o -name '*.cpp' -o -name '*.cc' -o -name '*.h' -o -name '*.c' \) -exec grep -H "$@" {} \;
+  find . \( -name '*akefile' -o -name '*.cpp' -o -name '*.cc' -o -name '*.h' -o -name '*.c' \) -exec grep -H "$@" --color=auto {} \;
 }
 
 # grep in all Go files in current dir and all subdirs.
@@ -276,12 +282,12 @@ grepg () {
 # grep in all java and XML files in the current directory and subdirs,
 # excluding "test" and "report" directories
 grepjx () {
-  find . \( -name test -o -name surefire-reports \) -prune -o \( -name '*.java' -o -name '*.xml' \) -exec grep -H "$@" {} \;
+  find . \( -name test -o -name surefire-reports \) -prune -o \( -name '*.java' -o -name '*.xml' \) -exec grep -H "$@" --color=auto {} \;
 }
 
 # grep in all java and XML files in the current directory and subdirs (including "test" directories).
 grepjxt () {
-  find . \( -name '*.java' -o -name '*.xml' \) -exec grep -H "$@" {} \;
+  find . \( -name '*.java' -o -name '*.xml' \) -exec grep -H "$@" --color=auto {} \;
 }
 
 # grep in all javascript files in the current directory and subdirs.
@@ -289,19 +295,19 @@ grepjxt () {
 # Ignores .build directories
 # Ignores coverage directories
 grepjs () {
-  find . -name 'node_modules' -prune -o -name '.build' -prune -o -name '.nyc_output' -prune -o -name 'coverage' -prune -o \( -name '*.js' -o -name '*.json' \) -exec grep -H "$@" {} \;
+  find . -name 'node_modules' -prune -o -name '.build' -prune -o -name '.nyc_output' -prune -o -name 'coverage' -prune -o \( -name '*.js' -o -name '*.json' \) -exec grep -H "$@" --color=auto {} \;
 }
 
 # grep in all html files in current dir and all subdirs.
 grephtml () {
-  find . -name '*.html' -exec grep -H "$@" {} \;
+  find . -name '*.html' -exec grep -H "$@" --color=auto {} \;
 }
 
 
 # grep in all python source files in the current directory and subdirs.
 # Exclude infra directory(s)
 greppy () {
-  find . -name 'infra' -prune -o \( -name '*.py' \) -exec grep -H "$@" {} \;
+  find . -name 'infra' -prune -o \( -name '*.py' \) -exec grep -H "$@" --color=auto {} \;
 
   # Or, include everything:
   #find . -name '*.py' -exec grep -H "$@" {} \;
@@ -309,12 +315,12 @@ greppy () {
 
 # grep in all code header files in current dir and all subdirs.
 greph () {
-  find . -name '*.h' -exec grep -H "$@" {} \;
+  find . -name '*.h' -exec grep -H "$@" --color=auto {} \;
 }
 
 # grep in all text-ish files in current dir and all subdirs.
 grept () {
-  find . \( -name '*.txt' -o -name '*.TXT' \) -exec grep -H "$@" {} \;
+  find . \( -name '*.txt' -o -name '*.TXT' \) -exec grep -H "$@" --color=auto {} \;
 }
 
 
