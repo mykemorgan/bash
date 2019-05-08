@@ -9,16 +9,19 @@ mmgithelp () {
     echo "GIT helper commands:"
     echo "--------------------------------------------------------------"
     echo "glog         Show short/specific versions of git log"
-    echo "ghstatus     Show (short) status of all Hermes modules repos"
-    echo "ghdiff       Show diff of all Hermes modules repos"
-    echo "ghlog        Show the last N commits on all Hermes modules repos"
-    echo "ghfetch      Fetch from upstream (non-personal) in all Hermes modules repos"
-    echo "ghrebase     Rebase the current branch (if no outstanding changes) in all Hermes repos"
+    echo "ghstatus     Show (short) status of all modules' repos"
+    echo "ghdiff       Show outstanding diffs of all modules' repos"
+    echo "ghlog        Show the last N commits on all modules' repos"
+    echo "ghfetch      Fetch from upstream (non-personal) in all modules' repos"
+    echo "ghrebase     Rebase the current branch (if no outstanding changes) in all repos"
+    echo "      The above gh* functions use get_all_components to list modules to examine"
+    echo "      Current components: [`get_all_components`]"
+    echo ""
     echo "gc           Checkout branch - git checkout"
     echo "gb           Show branches - git branch -vv"
     echo ""
     echo "mmcolor      Echo the first arg wrapped in tty color setting escapes."
-    echo "                Echos to terminals only. Use to set ansi colors."
+    echo "             Echos to terminals only. Use to set ansi colors."
     echo ""
     echo "npmi         Keep running 'npm install' until it works"
 }
@@ -89,8 +92,12 @@ glog () {
     git log --date=local --pretty=format:"%cd %h %Cred%an%Creset %s" $users $recent $otherargs
 }
 
+######################################################################
+# EDIT ME to be the list of module in the repos director
+# to be examined using the gh* git helper commands.
+######################################################################
 get_all_components() {
-    local components="fooweb barweb otherservice"
+    local components="foomodule barmodule otherservice"
     echo $components
 }
 
@@ -115,7 +122,8 @@ ghstatus () {
     local components=`get_all_components`
     local all_repos=`ls -d $components 2> /dev/null`
     if [ "${all_repos:-.}" = "." ] ; then
-	echo "Looks like there's no component directories in `pwd`"
+        echo "Looks like there's no component directories in `pwd`"
+        echo "Components = [$components]"
 	popd > /dev/null
 	return 1
     fi
@@ -181,6 +189,7 @@ ghdiff () {
     local all_repos=`ls -d $components 2> /dev/null`
     if [ "${all_repos:-.}" = "." ] ; then
 	echo "Looks like there's no component directories in `pwd`"
+        echo "Components = [$components]"
 	popd > /dev/null
 	return 1
     fi
@@ -250,6 +259,7 @@ ghlog () {
     local all_repos=`ls -d $components 2> /dev/null`
     if [ "${all_repos:-.}" = "." ] ; then
 	echo "Looks like there's no component directories in `pwd`"
+        echo "Components = [$components]"
 	popd > /dev/null
 	return 1
     fi
@@ -292,6 +302,7 @@ ghfetch () {
     local all_repos=`ls -d $components 2> /dev/null`
     if [ "${all_repos:-.}" = "." ] ; then
 	echo "Looks like there's no component directories in `pwd`"
+        echo "Components = [$components]"
 	popd > /dev/null
 	return 1
     fi
@@ -345,6 +356,7 @@ ghrebase () {
     local all_repos=`ls -d $components 2> /dev/null`
     if [ "${all_repos:-.}" = "." ] ; then
 	echo "Looks like there's no component directories in `pwd`"
+        echo "Components = [$components]"
 	popd > /dev/null
 	return 1
     fi
