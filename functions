@@ -351,13 +351,17 @@ list_code () {
 # cd/pd to the BUILDTOP or STAGETOP directory, depending on which is set
 cds () {
     dir_for_buildtop $1
-    goto_dir "cd" $dest_dir
+    if [ "${dest_dir:-.}" != "." ] ; then
+      goto_dir "cd" $dest_dir
+    fi
     dest_dir=
 }
 
 pds () {
     dir_for_buildtop $1
-    goto_dir "pushd" $dest_dir
+    if [ "${dest_dir:-.}" != "." ] ; then
+      goto_dir "pushd" $dest_dir
+    fi
     dest_dir=
 }
 
@@ -378,13 +382,17 @@ dir_for_buildtop () {
 # cd/pd to the repo directory
 cdr () {
     dir_for_repo $1
-    goto_dir "cd" $dest_dir
+    if [ "${dest_dir:-.}" != "." ] ; then
+      goto_dir "cd" $dest_dir
+    fi
     dest_dir=
 }
 
 pdr () {
     dir_for_repo $1
-    goto_dir "pushd" $dest_dir
+    if [ "${dest_dir:-.}" != "." ] ; then
+      goto_dir "pushd" $dest_dir
+    fi
     dest_dir=
 }
 
@@ -402,6 +410,36 @@ dir_for_repo () {
 	return
     fi
 }
+
+# cd/pd to the cloud directory.
+cdc () {
+    dir_for_cloudtop $1
+    if [ "${dest_dir:-.}" != "." ] ; then
+      goto_dir "cd" $dest_dir
+    fi
+    dest_dir=
+}
+
+pdc () {
+    dir_for_buildtop $1
+    if [ "${dest_dir:-.}" != "." ] ; then
+      goto_dir "pushd" $dest_dir
+    fi
+    dest_dir=
+}
+
+dir_for_cloudtop () {
+    dest_dir=
+    if [ "${CLOUDTOP:-.}" != "." ] ; then
+	dest_dir=$CLOUDTOP/$1
+    fi
+
+    if [ "${dest_dir:-.}" = "." ] ; then
+	echo "CLOUDTOP not set..."
+	return
+    fi
+}
+
 
 # Generic helper to "go to a directory" using cd or pushd.
 # Refactoring Overkill?
@@ -441,6 +479,8 @@ showenv () {
     echo "MANPATH           = ${MANPATH:-(not set)}"
     echo "BUILDTOP          = ${BUILDTOP:-(not set)}"
     echo "BUILDPROMPT       = ${BUILDPROMPT:-(not set)}"
+    echo "CLOUDTOP          = ${CLOUDTOP:-(not set)}"
+    echo "CLOUDPROMPT       = ${CLOUDPROMPT:-(not set)}"
     echo "REPOTOP           = ${REPOTOP:-(not set)}"
     echo "REPOPROMPT        = ${REPOPROMPT:-(not set)}"
     echo "PATHPROMPTS       = ${PATHPROMPTS[*]:-(not set)}"
